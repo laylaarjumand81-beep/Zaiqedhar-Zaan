@@ -1,443 +1,2943 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zaiqedar Zaan Chat Widget Demo</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .demo-container {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-
-        .demo-container h1 {
-            color: #c9a961;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .demo-container p {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .demo-label {
-            display: inline-block;
-            background: #f0f0f0;
-            padding: 8px 16px;
-            border-radius: 6px;
-            color: #333;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 20px;
-            letter-spacing: 1px;
-        }
-
-        /* ===== CHAT WIDGET STYLES ===== */
-        .chat-widget-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            z-index: 9999;
-        }
-
-        /* Chat Button */
-        .chat-button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #c9a961 0%, #b39050 100%);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
-            transition: all 0.3s ease;
-            font-size: 24px;
-        }
-
-        .chat-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(201, 169, 97, 0.6);
-        }
-
-        .chat-button:active {
-            transform: scale(0.95);
-        }
-
-        .chat-button.open {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0);
-            transition: all 0.3s ease;
-        }
-
-        /* Chat Window */
-        .chat-window {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 380px;
-            height: 500px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-
-        .chat-window.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        /* Chat Header */
-        .chat-header {
-            background: linear-gradient(135deg, #c9a961 0%, #b39050 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px 12px 0 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-height: 60px;
-        }
-
-        .chat-header-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .chat-header-subtitle {
-            font-size: 12px;
-            opacity: 0.9;
-            margin: 4px 0 0 0;
-        }
-
-        .close-button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .close-button:hover {
-            transform: rotate(90deg);
-            opacity: 0.8;
-        }
-
-        /* Messages Container */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: #f9f9f9;
-        }
-
-        /* Message Bubble */
-        .message {
-            display: flex;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .message.user .message-bubble {
-            background: #c9a961;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message.bot .message-bubble {
-            background: #e8e8e8;
-            color: #333;
-            border-bottom-left-radius: 4px;
-        }
-
-        /* Input Area */
-        .chat-input-area {
-            padding: 16px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 8px;
-            align-items: flex-end;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            resize: none;
-            max-height: 100px;
-            transition: border-color 0.2s ease;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: #c9a961;
-            box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.1);
-        }
-
-        .send-button {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            background: #c9a961;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .send-button:hover {
-            background: #b39050;
-            transform: scale(1.05);
-        }
-
-        .send-button:active {
-            transform: scale(0.95);
-        }
-
-        .send-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: scale(1);
-        }
-
-        /* Scrollbar Styling */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #c9a961;
-            border-radius: 3px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #b39050;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 480px) {
-            .chat-window {
-                width: 100vw;
-                height: 100vh;
-                max-width: 100%;
-                max-height: 100%;
-                bottom: 0;
-                right: 0;
-                border-radius: 0;
-            }
-
-            .chat-widget-container {
-                bottom: 20px;
-                right: 20px;
-            }
-
-            .chat-button {
-                width: 56px;
-                height: 56px;
-            }
-
-            .message-bubble {
-                max-width: 85%;
-                font-size: 13px;
-            }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zaiqedar Zaan | Restaurant in Karachi</title>
+<meta name="description" content="Zaiqedar Zaan serves fresh Pakistani food, burgers, pizza, pasta and desserts in Karachi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Mulish:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Demo Container -->
-    <div class="demo-container">
-        <h1>✓ Chat Widget Ready</h1>
-        <p>The floating chat widget is active in the bottom-right corner.</p>
-        <p style="color: #c9a961; font-weight: 600;">Click the chat button to start testing!</p>
-        <div class="demo-label">Responsive • Mobile-Friendly • No API Required</div>
+
+<!-- Dish illustrations (3D-style, reusable). Replace with real photos any time. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<radialGradient id="hl" cx=".3" cy=".25" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<g id="pl"><ellipse cx="60" cy="76" rx="52" ry="11" fill="#000" opacity=".28"/><ellipse cx="60" cy="68" rx="52" ry="15" fill="#cfc4ad"/><ellipse cx="60" cy="65" rx="52" ry="15" fill="#f4eee0"/><ellipse cx="60" cy="64" rx="38" ry="10" fill="#e5dcc7"/></g>
+
+<g id="sp"><use href="#pl"/>
+<g fill="#cf8a2c" stroke="#8e5a14" stroke-width="1.5"><rect x="22" y="48" width="48" height="15" rx="7.5" transform="rotate(-12 46 55)"/><rect x="30" y="38" width="48" height="15" rx="7.5" transform="rotate(6 54 45)"/><rect x="40" y="50" width="48" height="15" rx="7.5" transform="rotate(-4 64 57)"/></g>
+<g stroke="#f2c36d" stroke-width="2.5" stroke-linecap="round"><path d="M30 46l36-5M40 36l34 3M48 49l36-2"/></g>
+<ellipse cx="96" cy="60" rx="13" ry="5" fill="#9d1f18"/><ellipse cx="94" cy="58.5" rx="7" ry="2" fill="url(#hl)"/></g>
+
+<g id="bg"><ellipse cx="60" cy="78" rx="46" ry="8" fill="#000" opacity=".28"/>
+<rect x="26" y="62" width="68" height="12" rx="6" fill="#b87427"/>
+<rect x="24" y="52" width="72" height="12" rx="6" fill="#5a3420"/>
+<path d="M28 52h64l-10 10z" fill="#f2c230"/>
+<path d="M22 50q8 9 16 0t16 0 16 0 16 0 8 3v3H22z" fill="#79b04a"/>
+<path d="M26 46c0-30 68-30 68 0z" fill="#d8923f"/>
+<ellipse cx="50" cy="28" rx="26" ry="9" fill="url(#hl)"/>
+<g fill="#f6e3b4"><ellipse cx="46" cy="30" rx="3" ry="1.6"/><ellipse cx="62" cy="26" rx="3" ry="1.6"/><ellipse cx="74" cy="34" rx="3" ry="1.6"/><ellipse cx="56" cy="38" rx="3" ry="1.6"/></g></g>
+
+<g id="pz"><ellipse cx="60" cy="62" rx="50" ry="24" fill="#a8742d"/><ellipse cx="60" cy="56" rx="50" ry="24" fill="#dba44f"/><ellipse cx="60" cy="56" rx="42" ry="19" fill="#f0c14f"/>
+<g fill="#b8321f"><ellipse cx="42" cy="52" rx="8" ry="4"/><ellipse cx="68" cy="48" rx="8" ry="4"/><ellipse cx="80" cy="60" rx="8" ry="4"/><ellipse cx="54" cy="64" rx="8" ry="4"/><ellipse cx="30" cy="62" rx="6" ry="3"/></g>
+<g fill="#4f9a3a"><ellipse cx="58" cy="54" rx="4" ry="2"/><ellipse cx="74" cy="54" rx="3" ry="1.5"/></g>
+<path d="M60 56L98 48M60 56L84 76" stroke="#a8742d" stroke-width="1.5"/><ellipse cx="46" cy="42" rx="26" ry="8" fill="url(#hl)"/></g>
+
+<g id="kh"><ellipse cx="60" cy="80" rx="44" ry="7" fill="#000" opacity=".28"/>
+<rect x="8" y="38" width="12" height="6" rx="3" fill="#c8a04a"/><rect x="100" y="38" width="12" height="6" rx="3" fill="#c8a04a"/>
+<path d="M16 40h88c0 28-20 38-44 38S16 68 16 40z" fill="#2b2622"/>
+<ellipse cx="60" cy="40" rx="44" ry="11" fill="#5a5048"/><ellipse cx="60" cy="41" rx="39" ry="8.5" fill="#c2410c"/>
+<g fill="#e8a75d"><ellipse cx="44" cy="40" rx="7" ry="3.5"/><ellipse cx="62" cy="43" rx="7" ry="3.5"/><ellipse cx="78" cy="39" rx="6" ry="3"/></g>
+<g fill="#4f9a3a"><rect x="50" y="36" width="12" height="3" rx="1.5" transform="rotate(-18 56 37)"/><circle cx="72" cy="41" r="2.5"/><circle cx="36" cy="43" r="2"/></g>
+<path d="M30 56c14 6 46 6 60 0" stroke="#fff" stroke-opacity=".12" stroke-width="3" fill="none"/>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"><path d="M46 28q-6-8 0-14"/><path d="M60 26q-6-8 0-14"/><path d="M74 28q-6-8 0-14"/></g></g>
+
+<g id="ps"><use href="#pl"/><ellipse cx="60" cy="56" rx="32" ry="13" fill="#d9b04a"/><ellipse cx="60" cy="52" rx="32" ry="13" fill="#f1d17a"/>
+<g fill="none" stroke="#d3a93c" stroke-width="2.5" stroke-linecap="round"><path d="M36 52c10-10 20 8 30-2s14 6 22 0"/><path d="M40 58c12-8 18 6 28-2s12 4 16-2"/><path d="M44 46c8-6 16 4 24-2s10 2 14-2"/></g>
+<ellipse cx="60" cy="46" rx="18" ry="7" fill="#c0392b"/><ellipse cx="55" cy="44" rx="8" ry="2.5" fill="url(#hl)"/>
+<path d="M58 44q8-10 16-4-4 8-16 4z" fill="#4f9a3a"/></g>
+
+<g id="dk"><ellipse cx="60" cy="80" rx="26" ry="6" fill="#000" opacity=".3"/>
+<path d="M34 16h52l-7 60H41z" fill="currentColor"/>
+<path d="M34 16h52l-1.5 12H35.5z" fill="#fff" opacity=".28"/>
+<g fill="#fff" opacity=".6"><rect x="44" y="34" width="12" height="12" rx="2" transform="rotate(14 50 40)"/><rect x="62" y="44" width="12" height="12" rx="2" transform="rotate(-12 68 50)"/><rect x="48" y="56" width="12" height="12" rx="2" transform="rotate(8 54 62)"/></g>
+<path d="M34 16h52l-7 60H41z" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+<ellipse cx="60" cy="16" rx="26" ry="5" fill="#fff" opacity=".35"/>
+<path d="M66 30L84 2" stroke="#b3261e" stroke-width="4.5" stroke-linecap="round"/>
+<circle cx="90" cy="22" r="12" fill="#f2d03b" stroke="#b7c43c" stroke-width="2.5"/><path d="M90 11v22M79 22h22M82 14l16 16M98 14L82 30" stroke="#fff3b0" stroke-width="1.2"/>
+<path d="M42 22l3 44" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/></g>
+
+<g id="ds"><ellipse cx="60" cy="80" rx="46" ry="7" fill="#000" opacity=".28"/>
+<path d="M24 46h72c0 18-15 30-36 30S24 64 24 46z" fill="#d8ccb2"/>
+<ellipse cx="60" cy="46" rx="36" ry="11" fill="#f4eee0"/><ellipse cx="60" cy="47" rx="31" ry="8.5" fill="#d99a2b"/>
+<g fill="currentColor"><circle cx="44" cy="40" r="12"/><circle cx="70" cy="40" r="12"/><circle cx="57" cy="29" r="12"/></g>
+<g fill="url(#hl)"><circle cx="40" cy="35" r="8"/><circle cx="66" cy="35" r="8"/><circle cx="53" cy="24" r="8"/></g>
+<g fill="#6fae3f"><rect x="55" y="42" width="5" height="2.5" rx="1"/><rect x="76" y="46" width="5" height="2.5" rx="1"/><rect x="36" y="46" width="5" height="2.5" rx="1"/></g></g>
+</defs>
+</svg>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#top" id="top">
+      <svg class="chef" viewBox="0 -6 100 116" role="img" aria-label="Chef wearing a tall white hat">
+        <defs>
+          <radialGradient id="ch" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#c9c0ae"/></radialGradient>
+          <radialGradient id="cs" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#f8cfa6"/><stop offset="1" stop-color="#c5865a"/></radialGradient>
+          <linearGradient id="cc" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfc6b4"/></linearGradient>
+        </defs>
+        <ellipse cx="50" cy="106" rx="32" ry="4" fill="#000" opacity=".4"/>
+        <path d="M16 108c0-22 15-31 34-31s34 9 34 31z" fill="url(#cc)"/>
+        <path d="M36 80l14 18 14-18" fill="none" stroke="#c8a04a" stroke-width="5" stroke-linejoin="round"/>
+        <circle cx="50" cy="102" r="2" fill="#c8a04a"/><circle cx="50" cy="94" r="2" fill="#c8a04a" opacity="0"/>
+        <rect x="42" y="68" width="16" height="14" fill="url(#cs)"/>
+        <circle cx="27" cy="54" r="5" fill="url(#cs)"/><circle cx="73" cy="54" r="5" fill="url(#cs)"/>
+        <ellipse cx="50" cy="52" rx="24" ry="26" fill="url(#cs)"/>
+        <circle cx="39" cy="60" r="5" fill="#e0707a" opacity=".3"/><circle cx="61" cy="60" r="5" fill="#e0707a" opacity=".3"/>
+        <circle cx="41" cy="50" r="3" fill="#2a1a10"/><circle cx="59" cy="50" r="3" fill="#2a1a10"/>
+        <circle cx="42" cy="49" r="1" fill="#fff"/><circle cx="60" cy="49" r="1" fill="#fff"/>
+        <path d="M35 61c6-5 11-3 15 0 4-3 9-5 15 0-4 7-10 5-15 2-5 3-11 5-15-2z" fill="#3a2418"/>
+        <path d="M43 69q7 5 14 0" fill="none" stroke="#7a3b2a" stroke-width="2" stroke-linecap="round"/>
+        <rect x="29" y="22" width="42" height="14" rx="3" fill="url(#ch)"/>
+        <circle cx="34" cy="16" r="12" fill="url(#ch)"/><circle cx="66" cy="16" r="12" fill="url(#ch)"/><circle cx="50" cy="8" r="14" fill="url(#ch)"/>
+        <rect x="29" y="31" width="42" height="5" rx="2" fill="#bdb39f"/>
+      </svg>
+      <span class="name">Zaiqedar Zaan</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="#about">About</a>
+      <a href="#menu">Menu</a>
+      <a href="#visit">Visit us</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <h1 id="hero-title">Karachi's favourite dishes, cooked fresh every day.</h1>
+    <p>Come in for charcoal-warm karahi, juicy burgers, hot pizza and a sweet finish. There is always a table for you.</p>
+    <div class="actions">
+      <a class="btn" href="#menu">See the menu</a>
+      <a class="plain" href="#visit">Find us</a>
+    </div>
+  </div>
+</section>
+
+<section class="about" id="about">
+  <div class="wrap two">
+    <div>
+      <h2>A Karachi kitchen with a warm table</h2>
+      <p>Zaiqedar Zaan brings the taste of Karachi's busiest food streets into one welcoming dining room. Our cooks start early, grind spices in-house and cook each order fresh, from slow-simmered Nihari to crisp Zinger burgers.</p>
+      <p>Families, friends and late-night crowds all find something to love here. Sit down, share a few plates and take your time.</p>
+    </div>
+    <ul class="points">
+      <li><strong>Cooked fresh to order</strong>Nothing waits under a lamp. Your food comes hot from the kitchen.</li>
+      <li><strong>Spices ground in-house</strong>Our karahi and Nihari get their flavour from whole spices.</li>
+      <li><strong>Room for everyone</strong>Large tables for families and a quiet corner for two.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="menu" id="menu">
+  <div class="wrap">
+    <h2>Our menu</h2>
+    <p class="lead">All prices are in Pakistani rupees (Rs).</p>
+
+    <div class="grid">
+      <article class="card combo">
+        <div class="art"><svg viewBox="0 0 120 90"><use href="#bg"/></svg><svg viewBox="0 0 120 90" style="color:#e8503a"><use href="#dk"/></svg></div>
+        <div><h3>Special combo</h3><p>Zinger burger, fries and a drink of your choice.</p><span class="price">Rs 850</span></div>
+      </article>
     </div>
 
-    <!-- Chat Widget -->
-    <div class="chat-widget-container">
-        <button class="chat-button" id="chatButton" title="Open Chat">
-            💬
-        </button>
+    <h3 class="cat">Starters</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Spring rolls"><use href="#sp"/></svg></div><h4>Crispy spring rolls</h4><p>Vegetable rolls fried golden, with chilli dip.</p><span class="price">Rs 390</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Samosas"><use href="#sp"/></svg></div><h4>Chicken samosa chaat</h4><p>Crushed samosas with yoghurt and tamarind.</p><span class="price">Rs 350</span></article>
+    </div>
 
-        <div class="chat-window" id="chatWindow">
-            <div class="chat-header">
-                <div>
-                    <p class="chat-header-title">Zaiqedar Zaan Assistant</p>
-                    <p class="chat-header-subtitle">We're here to help</p>
-                </div>
-                <button class="close-button" id="closeButton">✕</button>
-            </div>
+    <h3 class="cat">Burgers</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Zinger burger"><use href="#bg"/></svg></div><h4>Zinger burger</h4><p>Crunchy fried chicken, lettuce and house sauce.</p><span class="price">Rs 650</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Beef burger"><use href="#bg"/></svg></div><h4>Smash beef burger</h4><p>Two seared patties, melted cheese and pickles.</p><span class="price">Rs 790</span></article>
+    </div>
 
-            <div class="chat-messages" id="chatMessages"></div>
+    <h3 class="cat">Pizza</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Tikka pizza"><use href="#pz"/></svg></div><h4>Chicken tikka pizza</h4><p>Spiced tikka chicken, onion and green chilli.</p><span class="price">Rs 1,350</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Pepperoni pizza"><use href="#pz"/></svg></div><h4>Pepperoni pizza</h4><p>Beef pepperoni on a rich tomato and cheese base.</p><span class="price">Rs 1,450</span></article>
+    </div>
 
-            <div class="chat-input-area">
-                <textarea
-                    class="chat-input"
-                    id="chatInput"
-                    placeholder="Type your message..."
-                    rows="1"
-                ></textarea>
-                <button class="send-button" id="sendButton">➤</button>
-            </div>
+    <h3 class="cat">Pakistani food</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Chicken karahi"><use href="#kh"/></svg></div><h4>Chicken karahi</h4><p>Cooked in a wok with tomato, ginger and green chilli.</p><span class="price">Rs 1,650</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Beef nihari"><use href="#kh"/></svg></div><h4>Beef nihari</h4><p>Slow-cooked overnight and served with fresh naan.</p><span class="price">Rs 1,100</span></article>
+    </div>
+
+    <h3 class="cat">Pasta</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Alfredo pasta"><use href="#ps"/></svg></div><h4>Creamy chicken alfredo</h4><p>Fettuccine in garlic cream sauce with grilled chicken.</p><span class="price">Rs 950</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" role="img" aria-label="Arrabbiata pasta"><use href="#ps"/></svg></div><h4>Spicy arrabbiata</h4><p>Penne in a hot tomato and chilli sauce.</p><span class="price">Rs 880</span></article>
+    </div>
+
+    <h3 class="cat">Drinks</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" style="color:#6fbf5a" role="img" aria-label="Mint margarita"><use href="#dk"/></svg></div><h4>Mint margarita</h4><p>Fresh mint, lemon and ice. Cold and sharp.</p><span class="price">Rs 380</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" style="color:#e0447a" role="img" aria-label="Rose sharbat"><use href="#dk"/></svg></div><h4>Rose sharbat</h4><p>Chilled rose syrup with milk and basil seeds.</p><span class="price">Rs 320</span></article>
+    </div>
+
+    <h3 class="cat">Desserts</h3>
+    <div class="grid">
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" style="color:#6b2d12" role="img" aria-label="Gulab jamun"><use href="#ds"/></svg></div><h4>Gulab jamun</h4><p>Three warm dumplings in cardamom syrup.</p><span class="price">Rs 350</span></article>
+      <article class="card"><div class="art"><svg viewBox="0 0 120 90" style="color:#f3e3b5" role="img" aria-label="Ras malai"><use href="#ds"/></svg></div><h4>Ras malai</h4><p>Soft milk dumplings in chilled saffron cream.</p><span class="price">Rs 420</span></article>
+    </div>
+  </div>
+</section>
+
+<section class="visit" id="visit">
+  <div class="wrap">
+    <h2>Visit us</h2>
+    <div class="panels">
+      <div class="panel">
+        <h3>Opening hours</h3>
+        <dl>
+          <div><dt>Monday to Thursday</dt><dd>12:00 pm to 11:30 pm</dd></div>
+          <div><dt>Friday to Sunday</dt><dd>12:00 pm to 1:00 am</dd></div>
+        </dl>
+      </div>
+      <div class="panel">
+        <h3>Location</h3>
+        <address>Zaiqedar Zaan<br>Khayaban-e-Shahbaz, DHA Phase 6<br>Karachi, Pakistan</address>
+        <a class="plain" href="https://www.google.com/maps/search/?api=1&amp;query=DHA+Phase+6+Karachi" target="_blank" rel="noopener">Get directions</a>
+      </div>
+      <div class="panel">
+        <h3>Contact</h3>
+        <!-- Replace the phone and email below with your final details. -->
+        <p><a class="phone" href="tel:+923218271287">0321 8271287</a></p>
+        <p><a href="mailto:hello@zaiqedarzaan.pk">hello@zaiqedarzaan.pk</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <strong>Zaiqedar Zaan</strong>
+    <nav aria-label="Footer"><a href="#about">About</a><a href="#menu">Menu</a><a href="#visit">Visit us</a></nav>
+    <small>&copy; 2026 Zaiqedar Zaan, Karachi. All rights reserved.</small>
+  </div>
+</footer>
+<!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
         </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
     </div>
 
-    <script>
-        // Elements
-        const chatButton = document.getElementById('chatButton');
-        const closeButton = document.getElementById('closeButton');
-        const chatWindow = document.getElementById('chatWindow');
-        const chatInput = document.getElementById('chatInput');
-        const sendButton = document.getElementById('sendButton');
-        const chatMessages = document.getElementById('chatMessages');
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
 
-        // State
-        let isWindowOpen = false;
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
 
-        // Open/Close Chat Window
-        chatButton.addEventListener('click', () => {
-            isWindowOpen = true;
-            chatWindow.classList.add('visible');
-            chatButton.classList.add('open');
-            chatInput.focus();
-        });
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
 
-        closeButton.addEventListener('click', () => {
-            isWindowOpen = false;
-            chatWindow.classList.remove('visible');
-            chatButton.classList.remove('open');
-        });
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
 
-        // Auto-expand textarea
-        chatInput.addEventListener('input', () => {
-            chatInput.style.height = 'auto';
-            chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
-        });
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-        // Send Message
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
 
-            // Show user message immediately
-            addMessage(message, 'user');
-            chatInput.value = '';
-            chatInput.style.height = 'auto';
-            sendButton.disabled = true;
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
 
-            // Simulate bot typing and send reply after 800ms
-            setTimeout(() => {
-                addMessage(
-                    "Hi! I'm Zaiqedar Zaan Assistant. My AI brain isn't connected yet.",
-                    'bot'
-                );
-                sendButton.disabled = false;
-            }, 800);
-        }
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
 
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
 
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = text;
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
 
-            messageDiv.appendChild(bubble);
-            chatMessages.appendChild(messageDiv);
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
 
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+    closeButton.addEventListener("click", () => setChatOpen(false));
 
-        // Send on button click
-        sendButton.addEventListener('click', sendMessage);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
 
-        // Send on Enter (Shift+Enter for new line)
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    </script>
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+</script><!-- Zaiqadar Zaan Assistant -->
+<style>
+  :root {
+    --zz-primary: #1f6f5b;
+    --zz-primary-dark: #155242;
+    --zz-surface: #ffffff;
+    --zz-page: #f4f7f6;
+    --zz-text: #17342d;
+    --zz-muted: #667b76;
+    --zz-border: #dce7e3;
+    --zz-shadow: 0 18px 50px rgba(19, 61, 50, 0.22);
+  }
+
+  #zz-chat-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .zz-chat-toggle {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(31, 111, 91, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .zz-chat-toggle:hover {
+    background: var(--zz-primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .zz-chat-toggle:focus-visible,
+  .zz-send:focus-visible,
+  .zz-chat-input:focus-visible,
+  .zz-close:focus-visible {
+    outline: 3px solid rgba(31, 111, 91, 0.35);
+    outline-offset: 3px;
+  }
+
+  .zz-chat-toggle svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .zz-chat-window {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 32px));
+    height: min(560px, calc(100vh - 115px));
+    overflow: hidden;
+    border: 1px solid var(--zz-border);
+    border-radius: 18px;
+    background: var(--zz-surface);
+    box-shadow: var(--zz-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+
+  .zz-chat-window.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .zz-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+    color: #fff;
+    background: var(--zz-primary);
+  }
+
+  .zz-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .zz-chat-avatar {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .zz-chat-title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .zz-chat-status {
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+  }
+
+  .zz-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .zz-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .zz-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 18px 14px;
+    background: var(--zz-page);
+  }
+
+  .zz-message {
+    display: flex;
+    max-width: 84%;
+  }
+
+  .zz-message--assistant {
+    align-self: flex-start;
+  }
+
+  .zz-message--user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .zz-bubble {
+    padding: 10px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .zz-message--assistant .zz-bubble {
+    border: 1px solid var(--zz-border);
+    border-bottom-left-radius: 4px;
+    background: #fff;
+    color: var(--zz-text);
+  }
+
+  .zz-message--user .zz-bubble {
+    border-bottom-right-radius: 4px;
+    background: var(--zz-primary);
+    color: #fff;
+  }
+
+  .zz-chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--zz-border);
+    background: #fff;
+  }
+
+  .zz-chat-input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--zz-border);
+    border-radius: 10px;
+    color: var(--zz-text);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .zz-chat-input::placeholder {
+    color: #899b96;
+  }
+
+  .zz-send {
+    padding: 0 15px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--zz-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .zz-send:hover {
+    background: var(--zz-primary-dark);
+  }
+
+  .zz-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 480px) {
+    #zz-chat-widget {
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    .zz-chat-window {
+      right: 0;
+      bottom: 68px;
+      width: calc(100vw - 28px);
+      height: min(570px, calc(100vh - 100px));
+      border-radius: 16px;
+    }
+
+    .zz-chat-toggle {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>
+
+<div id="zz-chat-widget">
+  <section
+    class="zz-chat-window"
+    id="zz-chat-window"
+    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-hidden="true"
+    inert
+  >
+    <header class="zz-chat-header">
+      <div class="zz-chat-title-wrap">
+        <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
+        <div>
+          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <p class="zz-chat-status">Online</p>
+        </div>
+      </div>
+
+      <button class="zz-close" id="zz-close-chat" type="button" aria-label="Close chat">
+        ×
+      </button>
+    </header>
+
+    <div class="zz-messages" id="zz-messages" aria-live="polite">
+      <div class="zz-message zz-message--assistant">
+        <div class="zz-bubble">Hello! How can I help you today?</div>
+      </div>
+    </div>
+
+    <form class="zz-chat-form" id="zz-chat-form">
+      <input
+        class="zz-chat-input"
+        id="zz-chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message..."
+        aria-label="Message"
+      />
+      <button class="zz-send" id="zz-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <button
+    class="zz-chat-toggle"
+    id="zz-open-chat"
+    type="button"
+    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-expanded="false"
+    aria-controls="zz-chat-window"
+  >
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 11.5a7.5 7.5 0 0 1-7.8 7.5 8.8 8.8 0 0 1-3.4-.7L4 20l1.6-4.1A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const openButton = document.getElementById("zz-open-chat");
+    const closeButton = document.getElementById("zz-close-chat");
+    const chatWindow = document.getElementById("zz-chat-window");
+    const form = document.getElementById("zz-chat-form");
+    const input = document.getElementById("zz-chat-input");
+    const messages = document.getElementById("zz-messages");
+
+    const mockReply =
+      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+
+    function scrollToLatestMessage() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatOpen(isOpen) {
+      chatWindow.classList.toggle("is-open", isOpen);
+      chatWindow.setAttribute("aria-hidden", String(!isOpen));
+      chatWindow.inert = !isOpen;
+      openButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        setTimeout(() => input.focus(), 180);
+        scrollToLatestMessage();
+      } else {
+        openButton.focus();
+      }
+    }
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `zz-message zz-message--${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "zz-bubble";
+      bubble.textContent = text;
+
+      message.appendChild(bubble);
+      messages.appendChild(message);
+      scrollToLatestMessage();
+    }
+
+    openButton.addEventListener("click", () => {
+      setChatOpen(!chatWindow.classList.contains("is-open"));
+    });
+
+    closeButton.addEventListener("click", () => setChatOpen(false));
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const customerMessage = input.value.trim();
+      if (!customerMessage) return;
+
+      addMessage(customerMessage, "user");
+      input.value = "";
+      input.focus();
+
+      window.setTimeout(() => {
+        addMessage(mockReply, "assistant");
+      }, 350);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatWindow.classList.contains("is-open")) {
+        setChatOpen(false);
+      }
+    });
+  })();
+script<script src="[https://cdn.zaiqedarzaan.pk/chat-widget.js](https://cdn.zaiqedarzaan.pk/chat-widget.js)"></script>.
 </body>
 </html>
