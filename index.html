@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Mulish:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="chat-widget.css">
+<link rel="stylesheet" href="chat-widget.css?v=gold2">
 </head>
 <body>
 
@@ -223,13 +223,13 @@
     <small>&copy; 2026 Zaiqedar Zaan, Karachi. All rights reserved.</small>
   </div>
 </footer>
-<!-- Zaiqadar Zaan Assistant -->
+<!-- Zaiqedar Zaan Assistant -->
 
 <div id="zz-chat-widget">
   <section
     class="zz-chat-window"
     id="zz-chat-window"
-    aria-label="Zaiqadar Zaan Assistant chat"
+    aria-label="Zaiqedar Zaan Assistant chat"
     aria-hidden="true"
     inert
   >
@@ -237,7 +237,7 @@
       <div class="zz-chat-title-wrap">
         <div class="zz-chat-avatar" aria-hidden="true">ZZ</div>
         <div>
-          <h2 class="zz-chat-title">Zaiqadar Zaan Assistant</h2>
+          <h2 class="zz-chat-title">Zaiqedar Zaan Assistant</h2>
           <p class="zz-chat-status">Online</p>
         </div>
       </div>
@@ -270,7 +270,7 @@
     class="zz-chat-toggle"
     id="zz-open-chat"
     type="button"
-    aria-label="Open Zaiqadar Zaan Assistant chat"
+    aria-label="Open Zaiqedar Zaan Assistant chat"
     aria-expanded="false"
     aria-controls="zz-chat-window"
   >
@@ -299,10 +299,20 @@
     const chatWindow = document.getElementById("zz-chat-window");
     const form = document.getElementById("zz-chat-form");
     const input = document.getElementById("zz-chat-input");
+    const sendButton = document.getElementById("zz-send");
     const messages = document.getElementById("zz-messages");
 
-    const mockReply =
-      "Hi! I'm Zaiqadar Zaan Assistant. My AI brain isn't connected yet.";
+    // Google Apps Script web app /exec URL. Empty keeps the offline mock reply.
+    const AI_ENDPOINT = "";
+    const MAX_HISTORY = 10;
+    const FALLBACK_REPLY =
+      "Sorry, I could not connect just now. Please call us on 0321 8271287.";
+    const BUSY_REPLY =
+      "I am helping other guests right now. Please try again in a minute or call 0321 8271287.";
+
+    const history = [];
+    let waiting = false;
+    let typingBubble = null;
 
     function scrollToLatestMessage() {
       messages.scrollTop = messages.scrollHeight;
@@ -332,7 +342,150 @@
 
       message.appendChild(bubble);
       messages.appendChild(message);
+
+      if (bubble.getBoundingClientRect().height > messages.clientHeight - 16) {
+        const offset =
+          message.getBoundingClientRect().top - messages.getBoundingClientRect().top;
+        messages.scrollTop += offset - 8;
+      } else {
+        scrollToLatestMessage();
+      }
+      return message;
+    }
+
+    function showTyping() {
+      typingBubble = document.createElement("div");
+      typingBubble.className = "zz-message zz-message--assistant";
+      typingBubble.innerHTML =
+        '<div class="zz-bubble zz-typing" role="status" aria-label="Assistant is typing"><span></span><span></span><span></span></div>';
+      messages.appendChild(typingBubble);
       scrollToLatestMessage();
+    }
+
+    function hideTyping() {
+      if (typingBubble) {
+        typingBubble.remove();
+        typingBubble = null;
+      }
+    }
+
+    function setWaiting(value) {
+      waiting = value;
+      sendButton.disabled = value;
+      form.setAttribute("aria-busy", String(value));
+    }
+
+    function remember(role, text) {
+      history.push({ role, text });
+      if (history.length > MAX_HISTORY) history.shift();
+    }
+
+    const MENU_INTENT =
+      /menu|khana|khaana|food|dish|price|rate|kitne|kitna|burger|pizza|pasta|karahi|nihari|samosa|roll|sharbat|margarita|dessert|jamun|malai|alfredo|arrabbiata|combo/i;
+
+    const CATEGORY_INTENTS = [
+      { pattern: /combo/i, label: "Special combo" },
+      { pattern: /starter|samosa|spring roll/i, label: "Starters" },
+      { pattern: /burger/i, label: "Burgers" },
+      { pattern: /pizza/i, label: "Pizza" },
+      { pattern: /karahi|nihari|pakistani/i, label: "Pakistani food" },
+      { pattern: /pasta|alfredo|arrabbiata/i, label: "Pasta" },
+      { pattern: /drink|sharbat|margarita/i, label: "Drinks" },
+      { pattern: /dessert|jamun|malai/i, label: "Desserts" }
+    ];
+
+    function menuData() {
+      const groups = [];
+      const combo = document.querySelector(".menu .card.combo");
+      if (combo) {
+        const name = combo.querySelector("h3");
+        const description = combo.querySelector("p");
+        const price = combo.querySelector(".price");
+        if (name && price) {
+          groups.push({
+            category: "Special combo",
+            items: [
+              price.textContent.trim() +
+                (description ? " — " + description.textContent.trim() : "")
+            ]
+          });
+        }
+      }
+
+      document.querySelectorAll(".menu h3.cat").forEach((heading) => {
+        const grid = heading.nextElementSibling;
+        if (!grid) return;
+        const items = [...grid.querySelectorAll(".card")]
+          .map((card) => {
+            const name = card.querySelector("h4");
+            const price = card.querySelector(".price");
+            return name && price ? name.textContent.trim() + " — " + price.textContent.trim() : "";
+          })
+          .filter(Boolean);
+        if (items.length) {
+          groups.push({ category: heading.textContent.trim(), items: items });
+        }
+      });
+
+      return groups;
+    }
+
+    function buildMenuReply(query) {
+      if (!MENU_INTENT.test(query)) return "";
+
+      const groups = menuData();
+      if (!groups.length) return "";
+
+      const wanted = CATEGORY_INTENTS.filter((entry) => entry.pattern.test(query)).map((entry) => entry.label);
+      const lower = query.toLowerCase();
+
+      groups.forEach((group) => {
+        const mentionsDish = group.items.some((item) => {
+          const name = item.split(" — ")[0].toLowerCase();
+          return name.length > 3 && (lower.includes(name) || name.includes(lower));
+        });
+        if (mentionsDish && !wanted.includes(group.category)) {
+          wanted.push(group.category);
+        }
+      });
+
+      const rows = wanted.length
+        ? groups.filter((group) => wanted.includes(group.category))
+        : groups;
+      if (!rows.length) return "";
+
+      const body = rows
+        .map((group) =>
+          wanted.length
+            ? group.category + ":\n" + group.items.map((item) => "• " + item).join("\n")
+            : group.category + ": " + group.items.join("; ")
+        )
+        .join("\n\n");
+
+      return "Our menu (prices in Pakistani rupees):\n\n" + body + "\n\nFor orders, please call 0321 8271287.";
+    }
+
+    async function askAssistant() {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 30000);
+      try {
+        const response = await fetch(AI_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ messages: history }),
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          throw new Error("http_" + response.status);
+        }
+        const data = await response.json();
+        if (data && typeof data.reply === "string" && data.reply.trim()) {
+          return data.reply.trim();
+        }
+        throw new Error((data && data.error) || "empty_reply");
+      } finally {
+        window.clearTimeout(timer);
+      }
     }
 
     openButton.addEventListener("click", () => {
@@ -341,19 +494,63 @@
 
     closeButton.addEventListener("click", () => setChatOpen(false));
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (waiting) return;
 
       const customerMessage = input.value.trim();
       if (!customerMessage) return;
 
       addMessage(customerMessage, "user");
+      remember("user", customerMessage);
       input.value = "";
       input.focus();
+      setWaiting(true);
 
-      window.setTimeout(() => {
-        addMessage(mockReply, "assistant");
-      }, 350);
+      if (!AI_ENDPOINT) {
+        showTyping();
+        window.setTimeout(() => {
+          const menuReply = buildMenuReply(customerMessage);
+          hideTyping();
+          if (menuReply) {
+            addMessage(menuReply, "assistant");
+            remember("model", menuReply);
+          } else {
+            addMessage(
+              "Hi! I'm Zaiqedar Zaan Assistant. The AI is not connected yet, but you can ask me for the menu. For orders, call 0321 8271287.",
+              "assistant"
+            );
+            history.pop();
+          }
+          setWaiting(false);
+          input.focus();
+        }, 450);
+        return;
+      }
+
+      showTyping();
+      let reply;
+      let rememberReply = true;
+      try {
+        reply = await askAssistant();
+      } catch (error) {
+        const menuReply = buildMenuReply(customerMessage);
+        if (menuReply) {
+          reply = menuReply;
+        } else {
+          reply = error && error.message === "busy" ? BUSY_REPLY : FALLBACK_REPLY;
+          history.pop();
+          rememberReply = false;
+        }
+      }
+
+      hideTyping();
+      addMessage(reply, "assistant");
+      if (rememberReply) {
+        remember("model", reply);
+      }
+      setWaiting(false);
+      input.focus();
     });
 
     document.addEventListener("keydown", (event) => {
